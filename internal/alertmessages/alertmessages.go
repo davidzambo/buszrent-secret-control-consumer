@@ -63,7 +63,7 @@ func GetNewAlerts(client *http.Client, webFlottaUrl string) ([]AlertMessage, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("request failed with status: %d, response: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("get alerts request failed with status: %d, response: %s", resp.StatusCode, string(body))
 	}
 
 	var alerts []AlertMessage
@@ -104,7 +104,7 @@ func FetchMessageTypes(client *http.Client, webFlottaUrl string, bust int) error
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("request failed with status: %d", resp.StatusCode)
+		return fmt.Errorf("fetch message types request failed with status: %d", resp.StatusCode)
 	}
 
 	body, err := io.ReadAll(resp.Body)

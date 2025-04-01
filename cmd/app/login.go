@@ -26,6 +26,6 @@ func loginToWebFlotta(cfg Config, client *http.Client, webFlottaSso string) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("request failed with status: %d", resp.StatusCode)
+		log.Fatalf("login request failed with status: %d", resp.StatusCode)
 	}
 }
