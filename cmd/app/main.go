@@ -1,6 +1,8 @@
 package main
 
 import (
+	"buszrent-secret-control-consumer/internal/login"
+	"buszrent-secret-control-consumer/internal/tokens"
 	"context"
 	"github.com/ardanlabs/conf"
 	"github.com/joho/godotenv"
@@ -13,12 +15,19 @@ import (
 )
 
 type Config struct {
-	ClientID         string `conf:"default:--required--"`
-	Username         string `conf:"default:--required--"`
-	Password         string `conf:"default:--required--"`
-	ApiPort          string `conf:"default:8080"`
-	SlackApiToken    string `conf:"default:--required--"`
-	SlackChannelName string `conf:"default:#slack-bot-messages"`
+	ClientID     string `conf:"default:--required--"`
+	Username     string `conf:"default:--required--"`
+	Password     string `conf:"default:--required--"`
+	ApiHost      string `conf:"default:http://localhost"`
+	ApiPort      string `conf:"default:8080"`
+	IsAutoLogin  bool   `conf:"default:true"`
+	RefreshToken string `conf:"default:--required--"`
+	Slack        struct {
+		Token      string `conf:"default:--required--"`
+		Channel    string `conf:"default:#slack-bot-messages"`
+		DevToken   string `conf:"default:--required--"`
+		DevChannel string `conf:"default:#slack-bot-messages"`
+	}
 }
 
 const (
@@ -52,12 +61,15 @@ func run() error {
 	h := Handler{
 		client: client,
 		config: cfg,
-		ssoUrl: webFlottaSso,
 	}
 
-	go loginToWebFlotta(cfg, client, webFlottaSso)
-	go refreshTokenWorker(cfg.ClientID, webFlottaSso)
-	go sendAlertMessageNotificationsWorker(h.client, cfg.SlackApiToken, cfg.SlackChannelName, webFlottaApi, webFlottaApp)
+	if cfg.IsAutoLogin {
+		go login.LoginToWebFlotta(client, login.Config(cfg), webFlottaSso)
+	} else {
+		tokens.SetRefreshToken(cfg.RefreshToken)
+	}
+	go refreshTokenWorker(cfg.Slack.DevToken, cfg.Slack.DevChannel, cfg.ClientID)
+	go sendAlertMessageNotificationsWorker(h.client, cfg)
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)

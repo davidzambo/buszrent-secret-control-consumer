@@ -1,11 +1,14 @@
-package alertmessages
+package alerts
 
 import (
+	"buszrent-secret-control-consumer/internal/login"
+	"buszrent-secret-control-consumer/internal/slack"
 	"buszrent-secret-control-consumer/internal/tokens"
 	"buszrent-secret-control-consumer/internal/utils"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -34,13 +37,9 @@ type MessageTypes struct {
 
 var messageTypes MessageTypes
 
-func GetMessageTypes() MessageTypes {
-	return messageTypes
-}
-
 var lastFetch = time.Now()
 
-func GetNewAlerts(client *http.Client, webFlottaUrl string) ([]AlertMessage, error) {
+func GetNew(client *http.Client, cfg login.Config, webFlottaUrl, webFlottaSso string) ([]AlertMessage, error) {
 	alertsUrl := webFlottaUrl + "/alertmessages"
 
 	req, err := http.NewRequest("GET", alertsUrl, nil)
@@ -60,6 +59,15 @@ func GetNewAlerts(client *http.Client, webFlottaUrl string) ([]AlertMessage, err
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		log.Println("token is not accepted")
+		if _, err := login.LoginToWebFlotta(client, cfg, webFlottaSso); err != nil {
+			if err := slack.SendMessage(cfg.Slack.DevToken, cfg.Slack.DevChannel, slack.GetTokenErrorMessage()); err != nil {
+				return nil, fmt.Errorf("slack send error: %v", err)
+			}
+		}
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -86,7 +94,7 @@ func GetNewAlerts(client *http.Client, webFlottaUrl string) ([]AlertMessage, err
 	return newAlerts, nil
 }
 
-func FetchMessageTypes(client *http.Client, webFlottaUrl string, bust int) error {
+func FetchMessageTypes(client *http.Client, cfg login.Config, webFlottaUrl, webFlottaSso string, bust int) error {
 	typesUrl := webFlottaUrl + "/locales/hu/static.json?bust=" + strconv.Itoa(bust)
 
 	req, err := http.NewRequest("GET", typesUrl, nil)
@@ -103,6 +111,15 @@ func FetchMessageTypes(client *http.Client, webFlottaUrl string, bust int) error
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusUnauthorized {
+		log.Println("token is not accepted")
+		if _, err := login.LoginToWebFlotta(client, cfg, webFlottaSso); err != nil {
+			if err := slack.SendMessage(cfg.Slack.DevToken, cfg.Slack.DevChannel, slack.GetTokenErrorMessage()); err != nil {
+				return fmt.Errorf("slack send error: %v", err)
+			}
+		}
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("fetch message types request failed with status: %d", resp.StatusCode)
 	}
@@ -118,4 +135,24 @@ func FetchMessageTypes(client *http.Client, webFlottaUrl string, bust int) error
 	}
 	messageTypes = mt
 	return nil
+}
+
+func CreateSlackMessage(alerts []AlertMessage) string {
+	msg := "Az alábbi webflotta riasztások érkeztek: \n"
+
+	for _, alert := range alerts {
+		var alertMsg string
+		typeStr := strconv.Itoa(alert.MessageType)
+
+		if alert.RoadToll == 1 {
+			alertMsg = messageTypes.TollroadAlerts[typeStr]
+		} else {
+			alertMsg = messageTypes.Alerts.Labels[typeStr]
+		}
+		msg += fmt.Sprintf("Rendszám: %s, risztás ideje: %s, üzenet: %s\n",
+			alert.PlateNumber,
+			alert.DateTime.Time.Local().Format("2006-01-02 15:04"),
+			alertMsg)
+	}
+	return msg
 }

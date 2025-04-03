@@ -1,8 +1,10 @@
 package tokens
 
 import (
+	"buszrent-secret-control-consumer/internal/slack"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -25,38 +27,50 @@ func SetRefreshToken(token string) {
 	refreshToken = token
 }
 
-func FetchNewTokens(refreshToken, clientId, webFlottaSso string) error {
+func FetchNewTokens(slackDevToken, slackDevChannel, refreshToken, clientId, webFlottaSso string) (statusCode int, err error) {
 	data := map[string]string{
 		"ClientID":     clientId,
 		"RefreshToken": refreshToken,
 	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	resp, err := http.Post(webFlottaSso+"/api/refresh", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	var refreshTokenResponse struct {
-		Data struct {
+		StatusCode int
+		Data       struct {
 			AccessToken  string
 			RefreshToken string
 		}
+		Errors interface{}
 	}
+
 	if err := json.Unmarshal(body, &refreshTokenResponse); err != nil {
-		return err
+		return 0, err
+	}
+
+	if refreshTokenResponse.StatusCode != 200 {
+		SetRefreshToken("")
+		SetAccessToken("")
+		if err := slack.SendMessage(slackDevToken, slackDevChannel, slack.GetTokenErrorMessage()); err != nil {
+			return 0, fmt.Errorf("slack send error: %v", err)
+		}
+		return refreshTokenResponse.StatusCode, fmt.Errorf("%v", refreshTokenResponse.Errors)
 	}
 	SetAccessToken(refreshTokenResponse.Data.AccessToken)
 	SetRefreshToken(refreshTokenResponse.Data.RefreshToken)
 
-	return nil
+	return resp.StatusCode, nil
 }
