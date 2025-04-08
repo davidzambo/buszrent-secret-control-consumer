@@ -64,7 +64,7 @@ func GetNew(client *http.Client, cfg login.Config, webFlottaUrl, webFlottaSso st
 	if resp.StatusCode == http.StatusUnauthorized {
 		log.Println("token is not accepted")
 		if _, err := login.LoginToWebFlotta(client, cfg, webFlottaSso); err != nil {
-			if err := slack.SendMessage(cfg.Slack.DevToken, cfg.Slack.DevChannel, slack.GetTokenErrorMessage()); err != nil {
+			if err := slack.SendMessage(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel, slack.GetTokenErrorMessage()); err != nil {
 				return nil, fmt.Errorf("slack send error: %v", err)
 			}
 		}
@@ -114,7 +114,7 @@ func FetchMessageTypes(client *http.Client, cfg login.Config, webFlottaUrl, webF
 	if resp.StatusCode == http.StatusUnauthorized {
 		log.Println("token is not accepted")
 		if _, err := login.LoginToWebFlotta(client, cfg, webFlottaSso); err != nil {
-			if err := slack.SendMessage(cfg.Slack.DevToken, cfg.Slack.DevChannel, slack.GetTokenErrorMessage()); err != nil {
+			if err := slack.SendMessage(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel, slack.GetTokenErrorMessage()); err != nil {
 				return fmt.Errorf("slack send error: %v", err)
 			}
 		}
