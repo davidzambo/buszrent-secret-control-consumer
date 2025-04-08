@@ -28,7 +28,7 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
 
       - name: Build the Docker image
-        run: docker build . --build-arg GITHUB_PAT=${{ secrets.REPO_ACCESS_TOKEN }} --tag ${{ env.IMAGE_NAME  }}:${{ env.TAG }}
+        run: docker build . --tag ${{ env.IMAGE_NAME  }}:${{ env.TAG }}
 
       - name: Push the Docker image
         run: docker push ${{ env.IMAGE_NAME  }}:${{ env.TAG }}

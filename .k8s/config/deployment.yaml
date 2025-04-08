@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secret-control-consumer-deployment
+  namespace: br-prod
+  labels:
+    app: secret-control-consumer-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secret-control-consumer-deployment
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: secret-control-consumer-deployment
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: secret-control-consumer
+          image: <IMAGE>
+          envFrom:
+            - secretRef:
+                name: slack-secret
+            - configMapRef:
+                name: secret-control-consumer-config
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: secret-control-consumer-svc
+  namespace: br-prod
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: secret-control-consumer-deployment

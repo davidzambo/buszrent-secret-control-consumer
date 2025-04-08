@@ -20,13 +20,13 @@ type Config struct {
 	Password     string `conf:"default:--required--"`
 	ApiHost      string `conf:"default:http://localhost"`
 	ApiPort      string `conf:"default:8080"`
-	IsAutoLogin  bool   `conf:"default:true"`
+	IsAutoLogin  bool   `conf:"default:false"`
 	RefreshToken string `conf:"default:--required--"`
 	Slack        struct {
-		Token      string `conf:"default:--required--"`
-		Channel    string `conf:"default:#slack-bot-messages"`
-		DevToken   string `conf:"default:--required--"`
-		DevChannel string `conf:"default:#slack-bot-messages"`
+		APIToken    string `conf:"default:--required--"`
+		Channel     string `conf:"default:#slack-bot-messages"`
+		DevAPIToken string `conf:"default:--required--"`
+		DevChannel  string `conf:"default:#slack-bot-messages"`
 	}
 }
 
@@ -49,7 +49,7 @@ func run() error {
 	}
 
 	var cfg Config
-	if err := conf.Parse(nil, "secret_control_consumer", &cfg); err != nil {
+	if err := conf.Parse(nil, "", &cfg); err != nil {
 		log.Fatalf("parsing config: %v", err)
 	}
 
@@ -68,7 +68,7 @@ func run() error {
 	} else {
 		tokens.SetRefreshToken(cfg.RefreshToken)
 	}
-	go refreshTokenWorker(cfg.Slack.DevToken, cfg.Slack.DevChannel, cfg.ClientID)
+	go refreshTokenWorker(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel, cfg.ClientID)
 	go sendAlertMessageNotificationsWorker(h.client, cfg)
 
 	signalChan := make(chan os.Signal, 1)

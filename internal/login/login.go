@@ -18,16 +18,16 @@ type Config struct {
 	IsAutoLogin  bool
 	RefreshToken string
 	Slack        struct {
-		Token      string
-		Channel    string
-		DevToken   string
-		DevChannel string
+		APIToken    string
+		Channel     string
+		DevAPIToken string
+		DevChannel  string
 	}
 }
 
 func LoginToWebFlotta(client *http.Client, cfg Config, webFlottaSso string) (statusCode int, err error) {
 	log.Println("---loginToWebFlotta")
-	callbackUrl := fmt.Sprintf("%s:%s/get_tokens", cfg.ApiHost, cfg.ApiPort)
+	callbackUrl := fmt.Sprintf("%s/get_tokens", cfg.ApiHost)
 
 	loginURL := webFlottaSso + "/?ClientId=" + cfg.ClientID + "&ApplicationId=Webflotta&CallbackUrl=" + callbackUrl + "&LanguageCode=hu"
 

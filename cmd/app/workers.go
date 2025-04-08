@@ -48,7 +48,7 @@ func sendAlertMessageNotificationsWorker(client *http.Client, cfg Config) {
 				}
 
 				if alertList != nil {
-					if err := slack.SendMessage(cfg.Slack.Token, cfg.Slack.Channel, alerts.CreateSlackMessage(alertList)); err != nil {
+					if err := slack.SendMessage(cfg.Slack.APIToken, cfg.Slack.Channel, alerts.CreateSlackMessage(alertList)); err != nil {
 						log.Println(err)
 					}
 				}
