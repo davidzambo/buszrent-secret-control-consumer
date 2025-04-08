@@ -65,7 +65,7 @@ func GetNew(client *http.Client, cfg login.Config, webFlottaUrl, webFlottaSso st
 		log.Println("token is not accepted")
 		if _, err := login.LoginToWebFlotta(client, cfg, webFlottaSso); err != nil {
 			if err := slack.SendMessage(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel, slack.GetTokenErrorMessage()); err != nil {
-				return nil, fmt.Errorf("slack send error: %v", err)
+				return nil, fmt.Errorf("slack send error on get new alerts for channel: %s %v", cfg.Slack.DevChannel, err)
 			}
 		}
 	}
@@ -115,7 +115,7 @@ func FetchMessageTypes(client *http.Client, cfg login.Config, webFlottaUrl, webF
 		log.Println("token is not accepted")
 		if _, err := login.LoginToWebFlotta(client, cfg, webFlottaSso); err != nil {
 			if err := slack.SendMessage(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel, slack.GetTokenErrorMessage()); err != nil {
-				return fmt.Errorf("slack send error: %v", err)
+				return fmt.Errorf("slack send error on fetch message types to channel: %s %v", cfg.Slack.DevChannel, err)
 			}
 		}
 	}

@@ -49,7 +49,7 @@ func sendAlertMessageNotificationsWorker(client *http.Client, cfg Config) {
 
 				if alertList != nil {
 					if err := slack.SendMessage(cfg.Slack.APIToken, cfg.Slack.Channel, alerts.CreateSlackMessage(alertList)); err != nil {
-						log.Println(err)
+						log.Printf("Failed to send message to alert message to channel: %s %v\n", cfg.Slack.Channel, err)
 					}
 				}
 

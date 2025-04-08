@@ -65,10 +65,11 @@ func FetchNewTokens(slackDevToken, slackDevChannel, refreshToken, clientId, webF
 		SetRefreshToken("")
 		SetAccessToken("")
 		if err := slack.SendMessage(slackDevToken, slackDevChannel, slack.GetTokenErrorMessage()); err != nil {
-			return 0, fmt.Errorf("slack send error: %v", err)
+			return 0, fmt.Errorf("slack send error on fetch new token to channel: %s %v", slackDevChannel, err)
 		}
 		return refreshTokenResponse.StatusCode, fmt.Errorf("%v", refreshTokenResponse.Errors)
 	}
+
 	SetAccessToken(refreshTokenResponse.Data.AccessToken)
 	SetRefreshToken(refreshTokenResponse.Data.RefreshToken)
 
