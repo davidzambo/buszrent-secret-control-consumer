@@ -137,7 +137,7 @@ func FetchMessageTypes(client *http.Client, cfg login.Config, webFlottaUrl, webF
 	return nil
 }
 
-func CreateSlackMessage(alerts []AlertMessage) string {
+func JoinAlerts(alerts []AlertMessage) string {
 	msg := "Az alábbi webflotta riasztások érkeztek: \n"
 
 	for _, alert := range alerts {

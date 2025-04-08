@@ -27,7 +27,7 @@ type Config struct {
 
 func LoginToWebFlotta(client *http.Client, cfg Config, webFlottaSso string) (statusCode int, err error) {
 	log.Println("---loginToWebFlotta")
-	callbackUrl := fmt.Sprintf("%s/get_tokens", cfg.ApiHost)
+	callbackUrl := fmt.Sprintf("%s/token", cfg.ApiHost)
 
 	loginURL := webFlottaSso + "/?ClientId=" + cfg.ClientID + "&ApplicationId=Webflotta&CallbackUrl=" + callbackUrl + "&LanguageCode=hu"
 

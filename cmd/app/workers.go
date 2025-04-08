@@ -11,50 +11,67 @@ import (
 )
 
 const (
-	refreshTokenTimer  = time.Minute * 1
+	refreshTokenTimer  = time.Second * 30
 	alertMessagesTimer = time.Minute * 1
 )
 
 func refreshTokenWorker(slackDevToken, slackDevChannel, clientId string) {
+	log.Println("---start refreshTokenWorker")
 	for {
-		log.Println("---start refreshTokenWorker")
 		refreshToken := tokens.GetRefreshToken()
-		if refreshToken != "" {
-			log.Println("fetch tokens")
-			if statusCode, err := tokens.FetchNewTokens(slackDevToken, slackDevChannel, refreshToken, clientId, webFlottaSso); err != nil {
-				log.Printf("Fetch token status: %d, error: %v\n", statusCode, err)
+		if refreshToken == "" {
+			log.Println("unknown refreshToken")
+			time.Sleep(refreshTokenTimer)
+			continue
+		}
 
-			}
+		log.Printf("fetch tokens with refreshToken %s\n", refreshToken)
+		if statusCode, err := tokens.FetchNewTokens(slackDevToken, slackDevChannel, refreshToken, clientId, webFlottaSso); err != nil {
+			log.Printf("Fetch token status: %d, error: %v\nrefreshToken: %s\nclientId: %s\n", statusCode, err, refreshToken, clientId)
 		}
 		time.Sleep(refreshTokenTimer)
 	}
 }
 
 func sendAlertMessageNotificationsWorker(client *http.Client, cfg Config) {
+	log.Println("---start sendAlertMessageNotificationsWorker")
 	for {
-		time.Sleep(time.Second * 5) // TODO ez így jó?
-		log.Println("---start sendAlertMessageNotificationsWorker")
+		time.Sleep(time.Second * 5)
 
-		if tokens.GetAccessToken() != "" {
-			log.Println("---start fetching new alerts")
-			if err := alerts.FetchMessageTypes(client, login.Config(cfg), webFlottaApp, webFlottaSso, bust); err != nil {
-				log.Printf("fetching alert type messages: %v\n", err)
+		if tokens.GetAccessToken() == "" {
+			log.Println("unknown accessToken")
+			continue
+		}
+
+		log.Println("---fetching message types")
+
+		if err := alerts.FetchMessageTypes(client, login.Config(cfg), webFlottaApp, webFlottaSso, bust); err != nil {
+			log.Printf("Error on fetching alert type messages: %v\n", err)
+			if err := slack.SendMessage(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel, "Secret Control consumer: Error on fetching alert type messages"); err != nil {
+				log.Printf("Failed to send message to message type error to channel: %s %v\n", cfg.Slack.DevChannel, err)
+			}
+			return
+		}
+
+		log.Println("---start fetching new alerts")
+
+		for {
+			alertList, err := alerts.GetNew(client, login.Config(cfg), webFlottaApi, webFlottaSso)
+			if err != nil {
+				log.Println(err)
 			}
 
-			for {
-				alertList, err := alerts.GetNew(client, login.Config(cfg), webFlottaApi, webFlottaSso)
-				if err != nil {
-					log.Println(err)
-				}
+			if alertList != nil {
+				jointAlerts := alerts.JoinAlerts(alertList)
 
-				if alertList != nil {
-					if err := slack.SendMessage(cfg.Slack.APIToken, cfg.Slack.Channel, alerts.CreateSlackMessage(alertList)); err != nil {
-						log.Printf("Failed to send message to alert message to channel: %s %v\n", cfg.Slack.Channel, err)
-					}
-				}
+				log.Println(jointAlerts)
 
-				time.Sleep(alertMessagesTimer)
+				if err := slack.SendMessage(cfg.Slack.APIToken, cfg.Slack.Channel, jointAlerts); err != nil {
+					log.Printf("Failed to send message to alert message to channel: %s %v\n", cfg.Slack.Channel, err)
+				}
 			}
+
+			time.Sleep(alertMessagesTimer)
 		}
 	}
 }

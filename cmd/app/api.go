@@ -4,6 +4,8 @@ import (
 	"buszrent-secret-control-consumer/internal/login"
 	"buszrent-secret-control-consumer/internal/tokens"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 )
@@ -25,11 +27,36 @@ func methodHandler(method string, handlerFunc http.HandlerFunc) http.HandlerFunc
 }
 
 func startHttpServer(h *Handler) error {
-	http.HandleFunc("/get_tokens", methodHandler(http.MethodGet, h.handleRequestTokens))
+	http.HandleFunc("/token", methodHandler(http.MethodGet, h.handleRequestTokens))
+	http.HandleFunc("/set-token", methodHandler(http.MethodPost, h.handleUpdateRefreshToken))
 	http.HandleFunc("/login", methodHandler(http.MethodPost, h.handleLogin))
 
 	log.Println("Server is running on port :" + h.config.ApiPort)
 	return http.ListenAndServe(":"+h.config.ApiPort, nil)
+}
+
+func (h *Handler) handleUpdateRefreshToken(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Printf("Failed to read refresh token body: %v\n", err)
+		w.WriteHeader(400)
+		return
+	}
+
+	var content = map[string]string{}
+
+	unmarshallErr := json.Unmarshal(body, &content)
+
+	if unmarshallErr != nil {
+		fmt.Printf("Failed to unmarshall refresh token body: %v\n", err)
+		w.WriteHeader(400)
+		return
+	}
+
+	tokens.SetRefreshToken(content["refreshToken"])
+	fmt.Printf("New refresh token arrived: %s\n", content["refreshToken"])
+
+	w.WriteHeader(201)
 }
 
 func (h *Handler) handleRequestTokens(w http.ResponseWriter, r *http.Request) {

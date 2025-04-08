@@ -5,7 +5,7 @@ import (
 )
 
 func GetTokenErrorMessage() string {
-	return "Secret control consumer: hibás token"
+	return "Secret Control consumer: Hibás token"
 }
 
 func SendMessage(token, channel, msg string) error {
