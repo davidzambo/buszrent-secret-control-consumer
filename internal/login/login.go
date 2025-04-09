@@ -25,11 +25,12 @@ type Config struct {
 	}
 }
 
-func LoginToWebFlotta(client *http.Client, cfg Config, webFlottaSso string) (statusCode int, err error) {
-	log.Println("---loginToWebFlotta")
-	callbackUrl := fmt.Sprintf("%s/token", cfg.ApiHost)
+func ToWebFlotta(client *http.Client, cfg Config, webFlottaSso string) (statusCode int, err error) {
+	loginURL := fmt.Sprintf("%s/?ClientId=%s&ApplicationId=Webflotta&CallbackUrl=%s/token&LanguageCode=hu", webFlottaSso, cfg.ClientID, cfg.ApiHost)
 
-	loginURL := webFlottaSso + "/?ClientId=" + cfg.ClientID + "&ApplicationId=Webflotta&CallbackUrl=" + callbackUrl + "&LanguageCode=hu"
+	log.Printf("---loginToWebFlotta: %s\n", loginURL)
+
+	//loginURL := webFlottaSso + "/?ClientId=" + cfg.ClientID + "&ApplicationId=Webflotta&CallbackUrl=" + callbackUrl + "&LanguageCode=hu"
 
 	data := url.Values{}
 	data.Set("username", cfg.Username)
@@ -43,6 +44,8 @@ func LoginToWebFlotta(client *http.Client, cfg Config, webFlottaSso string) (sta
 		return 0, err
 	}
 	defer resp.Body.Close()
+
+	log.Printf("login response status: %s", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)

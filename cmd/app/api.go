@@ -77,7 +77,7 @@ func (h *Handler) handleRequestTokens(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
-	statusCode, err := login.LoginToWebFlotta(h.client, login.Config(h.config), webFlottaSso)
+	statusCode, err := login.ToWebFlotta(h.client, login.Config(h.config), webFlottaSso)
 	if err != nil {
 		if statusCode != 0 {
 			w.WriteHeader(statusCode)

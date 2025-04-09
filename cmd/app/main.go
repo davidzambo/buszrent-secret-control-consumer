@@ -64,7 +64,7 @@ func run() error {
 	}
 
 	if cfg.IsAutoLogin {
-		go login.LoginToWebFlotta(client, login.Config(cfg), webFlottaSso)
+		go login.ToWebFlotta(client, login.Config(cfg), webFlottaSso)
 	} else {
 		tokens.SetRefreshToken(cfg.RefreshToken)
 	}
