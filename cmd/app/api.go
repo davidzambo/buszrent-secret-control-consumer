@@ -27,7 +27,7 @@ func methodHandler(method string, handlerFunc http.HandlerFunc) http.HandlerFunc
 }
 
 func startHttpServer(h *Handler) error {
-	http.HandleFunc("/token", methodHandler(http.MethodGet, h.handleRequestTokens))
+	http.HandleFunc("/", methodHandler(http.MethodGet, h.handleRequestTokens))
 	http.HandleFunc("/set-token", methodHandler(http.MethodPost, h.handleUpdateRefreshToken))
 	http.HandleFunc("/login", methodHandler(http.MethodPost, h.handleLogin))
 

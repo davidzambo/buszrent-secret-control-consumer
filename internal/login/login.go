@@ -26,11 +26,9 @@ type Config struct {
 }
 
 func ToWebFlotta(client *http.Client, cfg Config, webFlottaSso string) (statusCode int, err error) {
-	loginURL := fmt.Sprintf("%s/?ClientId=%s&ApplicationId=Webflotta&CallbackUrl=%s/token&LanguageCode=hu", webFlottaSso, cfg.ClientID, cfg.ApiHost)
+	loginURL := fmt.Sprintf("%s/?ClientId=%s&ApplicationId=Webflotta&CallbackUrl=%s&LanguageCode=hu", webFlottaSso, cfg.ClientID, cfg.ApiHost)
 
 	log.Printf("---loginToWebFlotta: %s\n", loginURL)
-
-	//loginURL := webFlottaSso + "/?ClientId=" + cfg.ClientID + "&ApplicationId=Webflotta&CallbackUrl=" + callbackUrl + "&LanguageCode=hu"
 
 	data := url.Values{}
 	data.Set("username", cfg.Username)
@@ -45,7 +43,7 @@ func ToWebFlotta(client *http.Client, cfg Config, webFlottaSso string) (statusCo
 	}
 	defer resp.Body.Close()
 
-	log.Printf("login response status: %s", resp.StatusCode)
+	log.Printf("login response status: %d", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
