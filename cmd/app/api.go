@@ -60,6 +60,7 @@ func (h *Handler) handleUpdateRefreshToken(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *Handler) handleRequestTokens(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("New login callback called with refreshToken: %s\n", r.URL.Query().Get("RefreshToken"))
 	statusCode, err := tokens.FetchNewTokens(h.config.Slack.DevAPIToken, h.config.Slack.DevChannel, r.URL.Query().Get("RefreshToken"), h.config.ClientID, webFlottaSso)
 	if err != nil {
 		if statusCode != 0 {
