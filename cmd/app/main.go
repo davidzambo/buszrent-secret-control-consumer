@@ -2,7 +2,6 @@ package main
 
 import (
 	"buszrent-secret-control-consumer/internal/login"
-	"buszrent-secret-control-consumer/internal/tokens"
 	"context"
 	"github.com/ardanlabs/conf"
 	"github.com/joho/godotenv"
@@ -15,14 +14,13 @@ import (
 )
 
 type Config struct {
-	ClientID     string `conf:"default:--required--"`
-	Username     string `conf:"default:--required--"`
-	Password     string `conf:"default:--required--"`
-	ApiHost      string `conf:"default:http://localhost"`
-	ApiPort      string `conf:"default:8080"`
-	IsAutoLogin  bool   `conf:"default:false"`
-	RefreshToken string `conf:"default:--required--"`
-	Slack        struct {
+	ClientID    string `conf:"default:--required--"`
+	Username    string `conf:"default:--required--"`
+	Password    string `conf:"default:--required--"`
+	ApiHost     string `conf:"default:http://localhost"`
+	ApiPort     string `conf:"default:8080"`
+	IsAutoLogin bool   `conf:"default:true"`
+	Slack       struct {
 		APIToken    string `conf:"default:--required--"`
 		Channel     string `conf:"default:#slack-bot-messages"`
 		DevAPIToken string `conf:"default:--required--"`
@@ -63,14 +61,6 @@ func run() error {
 		config: cfg,
 	}
 
-	if cfg.IsAutoLogin {
-		go login.ToWebFlotta(client, login.Config(cfg), webFlottaSso)
-	} else {
-		tokens.SetRefreshToken(cfg.RefreshToken)
-	}
-	go refreshTokenWorker(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel, cfg.ClientID)
-	go sendAlertMessageNotificationsWorker(h.client, cfg)
-
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)
 	go func() {
@@ -78,6 +68,13 @@ func run() error {
 			log.Fatalf("ListenAndServe: %v", err)
 		}
 	}()
+
+	if cfg.IsAutoLogin {
+		login.ToWebFlotta(client, login.Config(cfg), webFlottaSso)
+	}
+
+	go refreshTokenWorker(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel, cfg.ClientID)
+	go sendAlertMessageNotificationsWorker(h.client, cfg)
 
 	<-signalChan
 	log.Print("Shutting down server...")

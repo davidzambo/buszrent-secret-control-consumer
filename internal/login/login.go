@@ -10,14 +10,13 @@ import (
 )
 
 type Config struct {
-	ClientID     string
-	Username     string
-	Password     string
-	ApiHost      string
-	ApiPort      string
-	IsAutoLogin  bool
-	RefreshToken string
-	Slack        struct {
+	ClientID    string
+	Username    string
+	Password    string
+	ApiHost     string
+	ApiPort     string
+	IsAutoLogin bool
+	Slack       struct {
 		APIToken    string
 		Channel     string
 		DevAPIToken string
@@ -39,6 +38,7 @@ func ToWebFlotta(client *http.Client, cfg Config, webFlottaSso string) (statusCo
 
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Printf("login error: %v", err)
 		return 0, err
 	}
 	defer resp.Body.Close()
