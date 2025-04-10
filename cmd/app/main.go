@@ -19,7 +19,7 @@ type Config struct {
 	Password    string `conf:"default:--required--"`
 	ApiHost     string `conf:"default:http://localhost"`
 	ApiPort     string `conf:"default:8080"`
-	IsAutoLogin bool   `conf:"default:true"`
+	IsAutoLogin bool   `conf:"default:false"`
 	Slack       struct {
 		APIToken    string `conf:"default:--required--"`
 		Channel     string `conf:"default:#slack-bot-messages"`

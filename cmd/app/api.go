@@ -28,17 +28,17 @@ func methodHandler(method string, handlerFunc http.HandlerFunc) http.HandlerFunc
 
 func startHttpServer(h *Handler) error {
 	http.HandleFunc("/", methodHandler(http.MethodGet, h.handleRequestTokens))
-	http.HandleFunc("/set-token", methodHandler(http.MethodPost, h.handleUpdateRefreshToken))
+	http.HandleFunc("/set-token", methodHandler(http.MethodPost, h.handleUpdateTokens))
 	http.HandleFunc("/login", methodHandler(http.MethodPost, h.handleLogin))
 
 	log.Println("Server is running on port :" + h.config.ApiPort)
 	return http.ListenAndServe(":"+h.config.ApiPort, nil)
 }
 
-func (h *Handler) handleUpdateRefreshToken(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleUpdateTokens(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		fmt.Printf("Failed to read refresh token body: %v\n", err)
+		fmt.Printf("Failed to read token update body: %v\n", err)
 		w.WriteHeader(400)
 		return
 	}
@@ -48,13 +48,16 @@ func (h *Handler) handleUpdateRefreshToken(w http.ResponseWriter, r *http.Reques
 	unmarshallErr := json.Unmarshal(body, &content)
 
 	if unmarshallErr != nil {
-		fmt.Printf("Failed to unmarshall refresh token body: %v\n", err)
+		fmt.Printf("Failed to unmarshall token body: %v\n", err)
 		w.WriteHeader(400)
 		return
 	}
 
-	tokens.SetRefreshToken(content["refreshToken"])
-	fmt.Printf("New refresh token arrived: %s\n", content["refreshToken"])
+	tokens.SetAccessToken(content["AccessToken"])
+	fmt.Printf("New accessToken arrived: %s\n", content["refreshToken"])
+
+	tokens.SetRefreshToken(content["RefreshToken"])
+	fmt.Printf("New refreshToken arrived: %s\n", content["refreshToken"])
 
 	w.WriteHeader(201)
 }
