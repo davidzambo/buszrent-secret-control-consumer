@@ -56,7 +56,7 @@ func sendAlertMessageNotificationsWorker(client *http.Client, cfg Config) {
 		log.Println("---start fetching new alerts")
 
 		for {
-			alertList, err := alerts.GetNew(client, login.Config(cfg), webFlottaApi, webFlottaSso)
+			alertList, err := alerts.GetNew(client, login.Config(cfg), webFlottaApi)
 			if err != nil {
 				log.Println(err)
 			}

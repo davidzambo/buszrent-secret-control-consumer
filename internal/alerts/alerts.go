@@ -6,6 +6,7 @@ import (
 	"buszrent-secret-control-consumer/internal/tokens"
 	"buszrent-secret-control-consumer/internal/utils"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -39,7 +40,12 @@ var messageTypes MessageTypes
 
 var lastFetch = time.Now()
 
-func GetNew(client *http.Client, cfg login.Config, webFlottaUrl, webFlottaSso string) ([]AlertMessage, error) {
+func GetNew(client *http.Client, cfg login.Config, webFlottaUrl string) ([]AlertMessage, error) {
+	token := tokens.GetAccessToken()
+	if token == "" {
+		return nil, errors.New("can't fetch new alert messages, no accessToken")
+	}
+
 	alertsUrl := webFlottaUrl + "/alertmessages"
 
 	req, err := http.NewRequest("GET", alertsUrl, nil)
@@ -47,7 +53,7 @@ func GetNew(client *http.Client, cfg login.Config, webFlottaUrl, webFlottaSso st
 		return nil, err
 	}
 
-	req.Header.Set("x-app-access-token", tokens.GetAccessToken())
+	req.Header.Set("x-app-access-token", token)
 	req.Header.Set("x-app-client", "Webflotta")
 
 	resp, err := client.Do(req)
@@ -63,10 +69,8 @@ func GetNew(client *http.Client, cfg login.Config, webFlottaUrl, webFlottaSso st
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		log.Println("token is not accepted")
-		if _, err := login.ToWebFlotta(client, cfg, webFlottaSso); err != nil {
-			if err := slack.SendMessage(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel, slack.GetTokenErrorMessage()); err != nil {
-				return nil, fmt.Errorf("slack send error on get new alerts for channel: %s %v", cfg.Slack.DevChannel, err)
-			}
+		if err := slack.SendFailedCommunicationWarning(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel); err != nil {
+			return nil, fmt.Errorf("slack send error on get new alerts for channel: %s %v", cfg.Slack.DevChannel, err)
 		}
 	}
 
@@ -113,10 +117,8 @@ func FetchMessageTypes(client *http.Client, cfg login.Config, webFlottaUrl, webF
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		log.Println("token is not accepted")
-		if _, err := login.ToWebFlotta(client, cfg, webFlottaSso); err != nil {
-			if err := slack.SendMessage(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel, slack.GetTokenErrorMessage()); err != nil {
-				return fmt.Errorf("slack send error on fetch message types to channel: %s %v", cfg.Slack.DevChannel, err)
-			}
+		if err := slack.SendFailedCommunicationWarning(cfg.Slack.DevAPIToken, cfg.Slack.DevChannel); err != nil {
+			return fmt.Errorf("slack send error on fetch message types to channel: %s %v", cfg.Slack.DevChannel, err)
 		}
 	}
 

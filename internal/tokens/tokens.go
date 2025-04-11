@@ -4,6 +4,7 @@ import (
 	"buszrent-secret-control-consumer/internal/slack"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,6 +29,10 @@ func SetRefreshToken(token string) {
 }
 
 func FetchNewTokens(slackDevToken, slackDevChannel, refreshToken, clientId, webFlottaSso string) (statusCode int, err error) {
+	if refreshToken == "" {
+		return 400, errors.New("can't fetch new tokens, no refreshToken")
+	}
+
 	data := map[string]string{
 		"ClientID":     clientId,
 		"RefreshToken": refreshToken,
@@ -64,7 +69,7 @@ func FetchNewTokens(slackDevToken, slackDevChannel, refreshToken, clientId, webF
 	if refreshTokenResponse.StatusCode != 200 {
 		SetRefreshToken("")
 		SetAccessToken("")
-		if err := slack.SendMessage(slackDevToken, slackDevChannel, slack.GetTokenErrorMessage()); err != nil {
+		if err := slack.SendFailedCommunicationWarning(slackDevToken, slackDevChannel); err != nil {
 			return 0, fmt.Errorf("slack send error on fetch new token to channel: %s %v", slackDevChannel, err)
 		}
 		return refreshTokenResponse.StatusCode, fmt.Errorf("%v", refreshTokenResponse.Errors)
